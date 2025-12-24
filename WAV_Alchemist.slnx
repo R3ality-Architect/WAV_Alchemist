@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="WAV_Alchemist/WAV_Alchemist.vcxproj" Id="35fa4b93-a976-482f-9765-0cc8f8eb8fb1" />
+</Solution>
