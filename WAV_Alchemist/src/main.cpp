@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <algorithm>
 #include <cmath>
 #include <fstream>
 #pragma pack (push, 1)// Ensure no padding is added to the structures
@@ -34,6 +33,16 @@ void increase_volume(float factor, std::vector<int16_t>& audioData) {
 	std::cout << "Volume increased by " << factor << std::endl;
 }
 
+// Robot effect function
+void robot_effect(int sampleRate, std::vector<int16_t>& audioData) {
+	float freqency = 30.0f; // Frequency of the robot effect
+	float PI = 3.14159265f;
+	for (int i = 0; i < audioData.size(); i++) {
+		float modulator = sinf(2.0f * PI * freqency * (i / static_cast<float>(sampleRate)));
+		audioData[i] = static_cast<int16_t>(audioData[i] * modulator);
+	}
+};
+// Function to write modified audio data to a new WAV file
 void write_wav(const std::string& outputPath, const WavHeader& header, const std::vector<int16_t>& audioData) {
 	std::ofstream outFile(outputPath, std::ios::binary);
 	outFile.write(reinterpret_cast<const char*>(&header), sizeof(WavHeader));
@@ -65,8 +74,9 @@ int main() {
 	audioData.resize(numSamples);
 	file.read(reinterpret_cast<char*>(audioData.data()), header.subchunk2Size);//reading the audio data from the file into the vector
 
-	increase_volume(0.4f, audioData);//increasing volume by a factor 
-	write_wav("voice-sample-boosted.wav", header, audioData);
+	increase_volume(2.0f, audioData);//increasing volume by a factor
+	robot_effect(header.sampleRate, audioData);//applying robot effect
+	write_wav("voice-sample-modified.wav", header, audioData);
 
 
 	std::cin.get();
