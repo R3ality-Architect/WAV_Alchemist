@@ -34,14 +34,26 @@ void increase_volume(float factor, std::vector<int16_t>& audioData) {
 }
 
 // Robot effect function
-void robot_effect(int sampleRate, std::vector<int16_t>& audioData) {
-	float freqency = 30.0f; // Frequency of the robot effect
+void robot_effect(int sampleRate, std::vector<int16_t>& audioData, float frequency) {
 	float PI = 3.14159265f;
 	for (int i = 0; i < audioData.size(); i++) {
-		float modulator = sinf(2.0f * PI * freqency * (i / static_cast<float>(sampleRate)));
+		float modulator = sinf(2.0f * PI * frequency * (i / static_cast<float>(sampleRate)));
 		audioData[i] = static_cast<int16_t>(audioData[i] * modulator);
 	}
 };
+
+void echo(int sampleRate, std::vector<int16_t>& audioData, float delaySeconds) {
+	float delayInSamples = delaySeconds * sampleRate;
+	std::vector<int16_t> echoData(audioData.size(), 0);
+	for (int i = 0; i < audioData.size(); i++) {
+		echoData[i] = audioData[i];
+		if (i >= delayInSamples) {
+			echoData[i] += static_cast<int16_t>(0.6f * audioData[i - static_cast<int>(delayInSamples)]);
+		}
+	}
+	audioData.swap(echoData);
+};
+
 // Function to write modified audio data to a new WAV file
 void write_wav(const std::string& outputPath, const WavHeader& header, const std::vector<int16_t>& audioData) {
 	std::ofstream outFile(outputPath, std::ios::binary);
@@ -49,6 +61,44 @@ void write_wav(const std::string& outputPath, const WavHeader& header, const std
 	outFile.write(reinterpret_cast<const char*>(audioData.data()), header.subchunk2Size);
 	std::cout << "Wrote file: " << outputPath << std::endl;
 }
+
+void choose_effect(int sampleRate, std::vector<int16_t>& audioData) {
+	std::cout << "Choose an effect to apply:\n";
+	std::cout << "1. Increase Volume\n";
+	std::cout << "2. Robot Effect\n";
+	std::cout << "3. Echo Effect\n";
+	std::cout << "Enter the number of your choice: ";
+	int choice;
+	std::cin >> choice;
+	switch (choice) {
+	case 1: {
+		float factor;
+		std::cout << "Enter volume factor (e.g., 1.5 for 50% louder): ";
+		std::cin >> factor;
+		increase_volume(factor, audioData);
+		break;
+	}
+	case 2: {
+		float frequency;
+		std::cout << "Enter modulation frequency in Hz (e.g., 30): ";
+		std::cin >> frequency;
+		robot_effect(sampleRate, audioData, frequency);
+		break;
+	}
+	case 3: {
+		float delaySeconds;
+		std::cout << "Enter echo delay in seconds (e.g., 0.5): ";
+		std::cin >> delaySeconds;
+		echo(sampleRate, audioData, delaySeconds);
+		break;
+	}
+	default:
+		std::cout << "Invalid choice. No effect will be applied.\n";
+		break;
+	}
+
+
+};
 
 int main() {
 	std::ifstream file("voice-sample.wav", std::ios::binary);//opening .wav file in binary format
@@ -74,8 +124,7 @@ int main() {
 	audioData.resize(numSamples);
 	file.read(reinterpret_cast<char*>(audioData.data()), header.subchunk2Size);//reading the audio data from the file into the vector
 
-	increase_volume(2.0f, audioData);//increasing volume by a factor
-	robot_effect(header.sampleRate, audioData);//applying robot effect
+	choose_effect(header.sampleRate, audioData);
 	write_wav("voice-sample-modified.wav", header, audioData);
 
 
